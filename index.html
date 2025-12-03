@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodge Ancar Atacama | Oasis en San Pedro</title>
+    <!-- Incluye Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración personalizada de Tailwind para colores Atacama -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'atacama-primary': '#D25C17', // Terracota cálido
+                        'atacama-secondary': '#E9C46A', // Ocre/Arena
+                        'atacama-dark': '#333D29', // Verde oscuro (Oasis)
+                        'atacama-light': '#F4F0E8', // Crema/Desierto claro
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Fuente Inter (por defecto en el prompt, aunque la config es opcional con Tailwind) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Iconos Lucide (alternativa moderna a Font Awesome) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Estilos adicionales para la imagen de fondo y el scroll */
+        html { scroll-behavior: smooth; }
+        
+        /* Contenedor Flex para el Carrusel de Imágenes */
+        .hero-carousel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 400%; /* Suficiente para las 4 imágenes (4 x 100%) */
+            height: 100%;
+            display: flex;
+            transition: transform 1s ease-in-out; /* Transición suave de 1 segundo */
+        }
+        
+        /* Cada Slide de Imagen */
+        .carousel-slide {
+            min-width: 25%; /* Cada slide ocupa el 25% del contenedor (100% / 4 slides) */
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* URLs de Imágenes (Placeholders) */
+        /* NOTA: Reemplaza estas URLs con las imágenes reales del desierto de Atacama */
+        #slide-1 { background-image: url('https://placehold.co/1920x1080/D25C17/F4F0E8?text=ATACAMA+1'); }
+        #slide-2 { background-image: url('https://placehold.co/1920x1080/333D29/E9C46A?text=ATACAMA+2'); }
+        #slide-3 { background-image: url('https://placehold.co/1920x1080/E9C46A/333D29?text=ATACAMA+3'); }
+        #slide-4 { background-image: url('https://placehold.co/1920x1080/F4F0E8/D25C17?text=ATACAMA+4'); }
+        
+        /* Para el botón flotante de WhatsApp */
+        .whatsapp-float {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            bottom: 40px;
+            right: 40px;
+            background-color: #25d366;
+            color: #fff;
+            border-radius: 50px;
+            text-align: center;
+            font-size: 30px;
+            box-shadow: 2px 2px 3px #999;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Estilo para simular el video placeholder de la sección 'Tour' */
+        .video-placeholder {
+            min-height: 400px;
+        }
+        
+        /* Estilo para la Modal de Calendario */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none; /* Oculto por defecto */
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 90%;
+            width: 450px; /* Ancho ajustado para dos campos */
+            text-align: center;
+        }
+        /* Ajuste de estilo para el input type="date" para que se vea bien */
+        .date-input-field {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            padding: 12px;
+            border: 2px solid var(--atacama-primary);
+            background-color: var(--atacama-light);
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        
+    </style>
+</head>
+<body class="bg-atacama-light font-sans text-atacama-dark">
+    
+    <!-- MODAL DE CALENDARIO (OCULTO POR DEFECTO) -->
+    <div id="date-picker-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h4 class="text-2xl font-bold text-atacama-dark mb-4">Selecciona tu Rango de Reserva</h4>
+            <p class="text-gray-600 mb-6">Elige las fechas de entrada y salida para verificar disponibilidad y precios.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                <div class="flex-1">
+                    <label for="check-in-input" class="block text-sm font-semibold mb-2 text-left">Check-in (Entrada)</label>
+                    <input type="date" id="check-in-input" class="w-full date-input-field">
+                </div>
+                <div class="flex-1">
+                    <label for="check-out-input" class="block text-sm font-semibold mb-2 text-left">Check-out (Salida)</label>
+                    <input type="date" id="check-out-input" class="w-full date-input-field" disabled>
+                </div>
+            </div>
+            
+            <div id="date-selection-message" class="min-h-[20px] mb-4 text-sm font-medium text-gray-500 italic">
+                Selecciona la fecha de entrada.
+            </div>
+
+            <button id="confirm-dates-btn" class="w-full py-3 bg-atacama-primary text-white font-bold rounded-lg hover:bg-atacama-dark transition duration-300 transform hover:scale-[1.01]" disabled>
+                VER DISPONIBILIDAD
+            </button>
+            
+            <button id="close-modal-btn" class="text-sm text-gray-500 mt-4 hover:text-atacama-primary transition duration-300">
+                Cerrar
+            </button>
+        </div>
+    </div>
+    
+    <!-- 1. CABECERA Y NAVEGACIÓN -->
+    <header class="sticky top-0 z-50 bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <!-- Logo -->
+            <div class="text-2xl font-extrabold text-atacama-primary tracking-wider">
+                ANCAR
+            </div>
+            
+            <!-- Menú Desktop -->
+            <nav class="hidden md:flex space-x-8 items-center" id="desktop-menu">
+                <a href="#inicio" class="text-sm font-medium text-gray-700 hover:text-atacama-primary transition duration-150">Inicio</a>
+                <a href="#bungalows" class="text-sm font-medium text-gray-70acama-primary transition duration-150">Bungalows</a>
+                <a href="#lodge" class="text-sm font-medium text-gray-700 hover:text-atacama-primary transition duration-150">El Lodge</a>
+                <a href="#galeria" class="text-sm font-medium text-gray-700 hover:text-atacama-primary transition duration-150">Galería</a>
+                <a href="#contacto" class="text-sm font-medium text-gray-700 hover:text-atacama-primary transition duration-150">Contacto</a>
+                <button onclick="alert('¡Motor de Reservas Integrado!')" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-bold rounded-full shadow-md text-atacama-dark bg-atacama-secondary hover:bg-yellow-400 transition duration-300 transform hover:scale-105">
+                    Reservar <i data-lucide="calendar-check" class="w-4 h-4 ml-2"></i>
+                </button>
+            </nav>
+            
+            <!-- Botón de Menú Móvil -->
+            <button id="menu-button" class="md:hidden p-2 rounded-md text-gray-700 hover:text-atacama-primary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-atacama-primary">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Menú Móvil (Toggleable) -->
+        <nav id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-100">
+                <a href="#inicio" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-atacama-light hover:text-atacama-primary">Inicio</a>
+                <a href="#bungalows" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-atacama-light hover:text-atacama-primary">Bungalows</a>
+                <a href="#lodge" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-atacama-light hover:text-atacama-primary">El Lodge</a>
+                <a href="#galeria" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-atacama-light hover:text-atacama-primary">Galería</a>
+                <a href="#contacto" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-atacama-light hover:text-atacama-primary">Contacto</a>
+                <button onclick="alert('¡Motor de Reservas Integrado!')" class="w-full mt-2 flex items-center justify-center px-4 py-2 border border-transparent text-base font-bold rounded-lg text-white bg-atacama-primary hover:bg-atacama-dark transition duration-300">
+                    Reservar Ahora <i data-lucide="calendar-check" class="w-5 h-5 ml-2"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 2. SECCIÓN HERO (PORTADA) -->
+    <section id="inicio" class="h-[80vh] flex items-center justify-center text-center relative rounded-b-xl overflow-hidden shadow-2xl">
+        
+        <!-- Contenedor de Carrusel de Imágenes con Slides -->
+        <div id="image-carousel" class="hero-carousel">
+            <div id="slide-1" class="carousel-slide"></div>
+            <div id="slide-2" class="carousel-slide"></div>
+            <div id="slide-3" class="carousel-slide"></div>
+            <div id="slide-4" class="carousel-slide"></div>
+        </div>
+        
+        <div class="absolute inset-0 bg-atacama-dark bg-opacity-40"></div>
+        <div class="relative z-10 p-6 max-w-4xl mx-auto">
+            <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-4 leading-tight">
+                LODGE ANCAR ATACAMA
+            </h1>
+            <p class="text-xl md:text-2xl font-light text-atacama-light mb-8">
+                Tu oasis de tranquilidad rústica a pasos del centro de San Pedro.
+            </p>
+            
+            <!-- CONTENEDOR DE BOTONES DE RESERVA DIVIDIDOS -->
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                
+                <!-- Botón 1: Elegir Fecha (Activa Modal/Calendario) -->
+                <button id="open-date-picker" class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-bold rounded-full shadow-xl text-atacama-dark bg-atacama-secondary hover:bg-yellow-400 transition duration-300 transform hover:scale-105">
+                    ELEGIR FECHA <i data-lucide="calendar-days" class="w-6 h-6 ml-3"></i>
+                </button>
+                
+                <!-- Botón 2: Ver Ofertas -->
+                <button onclick="alert('¡Te llevaremos a la sección de Ofertas!')" class="inline-flex items-center justify-center px-8 py-3 border border-2 border-white text-lg font-bold rounded-full shadow-xl text-white bg-transparent hover:bg-white/20 transition duration-300 transform hover:scale-105">
+                    VER OFERTAS <i data-lucide="percent-circle" class="w-6 h-6 ml-3"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Botones de Navegación del Carrusel -->
+        <button id="prev-slide" class="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-white/20 hover:bg-white/40 text-white rounded-full transition duration-300 backdrop-blur-sm hidden sm:block" aria-label="Imagen anterior">
+            <i data-lucide="chevron-left" class="w-6 h-6"></i>
+        </button>
+        <button id="next-slide" class="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-white/20 hover:bg-white/40 text-white rounded-full transition duration-300 backdrop-blur-sm hidden sm:block" aria-label="Imagen siguiente">
+            <i data-lucide="chevron-right" class="w-6 h-6"></i>
+        </button>
+
+    </section>
+
+    <!-- 3. SECCIÓN SOBRE NOSOTROS Y AMENIDADES -->
+    <section id="nosotros" class="py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-extrabold text-atacama-dark mb-4">Un Refugio Rústico con Encanto</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    Diseñado en tonos ocres y terracota, nuestro complejo turístico ofrece una experiencia de alojamiento única, combinando la independencia de una cabaña con la belleza del desierto.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <img src="https://placehold.co/600x400/333D29/E9C46A?text=Piscina+y+Jardines" alt="Piscina exterior de Lodge Ancar Atacama" class="rounded-xl shadow-lg w-full h-auto object-cover transform hover:scale-[1.01] transition duration-500">
+                </div>
+                <div>
+                    <h3 class="text-3xl font-semibold text-atacama-primary mb-6">Comodidad y Servicios Superiores</h3>
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Amenidades -->
+                        <div class="flex items-start space-x-3 p-3 bg-white rounded-lg shadow-md">
+                            <i data-lucide="droplets" class="w-6 h-6 text-atacama-primary flex-shrink-0 mt-1"></i>
+                            <div>
+                                <h4 class="font-bold text-lg">Piscina Exterior</h4>
+                                <p class="text-sm text-gray-500">Para refrescarte bajo el sol de Atacama.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3 p-3 bg-white rounded-lg shadow-md">
+                            <i data-lucide="wifi" class="w-6 h-6 text-atacama-primary flex-shrink-0 mt-1"></i>
+                            <div>
+                                <h4 class="font-bold text-lg">WiFi Gratuito</h4>
+                                <p class="text-sm text-gray-500">Conexión en todos los bungalows y áreas comunes.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3 p-3 bg-white rounded-lg shadow-md">
+                            <i data-lucide="sandwich" class="w-6 h-6 text-atacama-primary flex-shrink-0 mt-1"></i>
+                            <div>
+                                <h4 class="font-bold text-lg">Cocina Equipada</h4>
+                                <p class="text-sm text-gray-500">Total independencia en tu área de comedor.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3 p-3 bg-white rounded-lg shadow-md">
+                            <i data-lucide="map-pin" class="w-6 h-6 text-atacama-primary flex-shrink-0 mt-1"></i>
+                            <div>
+                                <h4 class="font-bold text-lg">Ubicación Central</h4>
+                                <p class="text-sm text-gray-500">A solo 10 minutos a pie de la Plaza Principal.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. SECCIÓN BUNGALOWS -->
+    <section id="bungalows" class="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-extrabold text-atacama-dark mb-4">Nuestros Bungalows</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    Cabañas completamente equipadas con calefacción, enfriador de aire y terraza individual.
+                </p>
+            </div>
+            
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Tarjeta Bungalow Elite -->
+                <div class="bg-atacama-light rounded-xl shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
+                    <img src="https://placehold.co/600x400/E9C46A/333D29?text=BUNGALOW+ELITE" alt="Bungalow Elite" class="w-full h-64 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold text-atacama-dark mb-2">Bungalow Elite</h3>
+                        <p class="text-gray-600 mb-4">2 Dormitorios, 2 baños. Vistas panorámicas a la piscina o jardín. La opción más premium.</p>
+                        <ul class="text-sm space-y-2 text-gray-700 mb-6">
+                            <li class="flex items-center"><i data-lucide="bed-double" class="w-4 h-4 mr-2 text-atacama-primary"></i> 2 Dormitorios</li>
+                            <li class="flex items-center"><i data-lucide="tv" class="w-4 h-4 mr-2 text-atacama-primary"></i> TV satelital y WiFi</li>
+                            <li class="flex items-center"><i data-lucide="soup" class="w-4 h-4 mr-2 text-atacama-primary"></i> Cocina Completa</li>
+                        </ul>
+                        <button onclick="alert('Ver detalles de Elite')" class="w-full py-2 bg-atacama-primary text-white font-bold rounded-lg hover:bg-atacama-dark transition duration-300">
+                            Ver Precios
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tarjeta Bungalow Superior -->
+                <div class="bg-atacama-light rounded-xl shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
+                    <img src="https://placehold.co/600x400/D25C17/F4F0E8?text=BUNGALOW+SUPERIOR" alt="Bungalow Superior" class="w-full h-64 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold text-atacama-dark mb-2">Bungalow Superior</h3>
+                        <p class="text-gray-600 mb-4">2 Dormitorios. Excelente relación calidad-precio. Terraza con zona de barbacoa.</p>
+                        <ul class="text-sm space-y-2 text-gray-700 mb-6">
+                            <li class="flex items-center"><i data-lucide="bed-double" class="w-4 h-4 mr-2 text-atacama-primary"></i> 2 Dormitorios</li>
+                            <li class="flex items-center"><i data-lucide="thermometer-sun" class="w-4 h-4 mr-2 text-atacama-primary"></i> Calefacción y Aire</li>
+                            <li class="flex items-center"><i data-lucide="grill" class="w-4 h-4 mr-2 text-atacama-primary"></i> BBQ Individual</li>
+                        </ul>
+                        <button onclick="alert('Ver detalles de Superior')" class="w-full py-2 bg-atacama-primary text-white font-bold rounded-lg hover:bg-atacama-dark transition duration-300">
+                            Ver Precios
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Bungalow Familiar -->
+                <div class="bg-atacama-light rounded-xl shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
+                    <img src="https://placehold.co/600x400/333D29/E9C46A?text=BUNGALOW+FAMILIAR" alt="Bungalow Familiar" class="w-full h-64 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold text-atacama-dark mb-2">Bungalow Familiar</h3>
+                        <p class="text-gray-600 mb-4">3 Dormitorios. Ideal para grupos grandes y familias. Máxima capacidad y espacio.</p>
+                        <ul class="text-sm space-y-2 text-gray-700 mb-6">
+                            <li class="flex items-center"><i data-lucide="users" class="w-4 h-4 mr-2 text-atacama-primary"></i> Grupos y Familias</li>
+                            <li class="flex items-center"><i data-lucide="square-check" class="w-4 h-4 mr-2 text-atacama-primary"></i> Servicios Adicionales</li>
+                            <li class="flex items-center"><i data-lucide="tree-pine" class="w-4 h-4 mr-2 text-atacama-primary"></i> Vista a Jardines</li>
+                        </ul>
+                        <button onclick="alert('Ver detalles de Familiar')" class="w-full py-2 bg-atacama-primary text-white font-bold rounded-lg hover:bg-atacama-dark transition duration-300">
+                            Ver Precios
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-12">
+                <button onclick="alert('¡Ver todos los tipos de Cabañas!')" class="inline-flex items-center justify-center px-6 py-3 border border-atacama-primary text-base font-semibold rounded-full text-atacama-dark bg-transparent hover:bg-atacama-primary hover:text-white transition duration-300">
+                    Mostrar todos los Bungalows <i data-lucide="chevrons-down" class="w-4 h-4 ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. SECCIÓN DE TOUR VIRTUAL / VIDEO Y GEMINI FEATURE -->
+    <section id="lodge" class="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-atacama-light">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-extrabold text-atacama-dark mb-4">Explora el Lodge</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    Descubre nuestras instalaciones, jardines y el ambiente único que te espera en el desierto.
+                </p>
+            </div>
+            
+            <div class="video-placeholder bg-gray-300 rounded-xl shadow-2xl flex items-center justify-center text-gray-800 font-bold text-xl mb-8">
+                <p>[Placeholder para el Video Promocional o Tour Virtual]</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div class="p-6 bg-white rounded-xl shadow-lg">
+                    <i data-lucide="compass" class="w-10 h-10 text-atacama-primary mx-auto mb-3"></i>
+                    <h4 class="font-bold text-xl mb-1">Atracciones</h4>
+                    <p class="text-sm text-gray-600">Servicio de información turística para tus tours.</p>
+                </div>
+                <div class="p-6 bg-white rounded-xl shadow-lg">
+                    <i data-lucide="award" class="w-10 h-10 text-atacama-primary mx-auto mb-3"></i>
+                    <h4 class="font-bold text-xl mb-1">Reconocimiento</h4>
+                    <p class="text-sm text-gray-600">Mejor puntuado en Booking y Expedia.</p>
+                </div>
+                <div class="p-6 bg-white rounded-xl shadow-lg">
+                    <i data-lucide="hand-heart" class="w-10 h-10 text-atacama-primary mx-auto mb-3"></i>
+                    <h4 class="font-bold text-xl mb-1">Nuestro Equipo</h4>
+                    <p class="text-sm text-gray-600">¡Hablamos tu idioma para una mejor atención!</p>
+                </div>
+            </div>
+
+            <!-- INTEGRACIÓN GEMINI: ITINERARIO PERSONALIZADO -->
+            <div class="mt-16 p-8 bg-atacama-secondary/30 rounded-xl shadow-inner border border-atacama-secondary">
+                <h3 class="text-3xl font-extrabold text-atacama-dark text-center mb-6 flex items-center justify-center">
+                    Itinerario Personalizado ✨ por Gemini
+                </h3>
+                <p class="text-center text-gray-700 mb-6 max-w-2xl mx-auto">
+                    ¿Aún no sabes qué hacer? Ingresa tus intereses (ej: 'observación de estrellas, historia andina, géiseres') y obtén un itinerario de 3 días recomendado por nuestro guía virtual.
+                </p>
+
+                <div class="max-w-xl mx-auto">
+                    <textarea id="tour-interest" rows="2" placeholder="Ingresa tus intereses turísticos aquí..." class="w-full p-3 border border-atacama-primary/50 rounded-lg focus:ring-atacama-primary focus:border-atacama-primary"></textarea>
+                    <button id="generate-tour-btn" class="w-full mt-4 py-3 bg-atacama-primary text-white font-bold rounded-lg hover:bg-atacama-dark transition duration-300 transform hover:scale-[1.01]">
+                        Generar Itinerario de 3 Días
+                    </button>
+                    
+                    <div id="tour-result" class="mt-6 p-4 bg-white rounded-lg shadow-md min-h-[50px] text-gray-800 text-left">
+                        <!-- Resultado del LLM se mostrará aquí -->
+                        <p class="text-gray-500 italic">El itinerario personalizado aparecerá aquí.</p>
+                    </div>
+                    <div id="tour-loading" class="hidden text-center mt-4">
+                        <i data-lucide="loader-circle" class="w-6 h-6 animate-spin text-atacama-primary mx-auto"></i>
+                        <p class="text-sm text-atacama-primary mt-2">Generando tu plan de aventura...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. SECCIÓN GALERÍA DE FOTOS -->
+    <section id="galeria" class="py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-extrabold text-atacama-dark mb-4">Nuestra Galería</h2>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="relative h-48 rounded-lg overflow-hidden shadow-md transform hover:scale-[1.03] transition duration-300 group">
+                    <img src="https://placehold.co/400x400/333D29/F4F0E8?text=PISCINA" alt="Foto de la Piscina" class="w-full h-full object-cover group-hover:opacity-70 transition duration-300">
+                    <p class="absolute bottom-3 left-3 text-white font-bold text-lg drop-shadow-lg">La Piscina</p>
+                </div>
+                <div class="relative h-48 rounded-lg overflow-hidden shadow-md transform hover:scale-[1.03] transition duration-300 group">
+                    <img src="https://placehold.co/400x400/D25C17/F4F0E8?text=QUICHOS" alt="Foto de Quinchos" class="w-full h-full object-cover group-hover:opacity-70 transition duration-300">
+                    <p class="absolute bottom-3 left-3 text-white font-bold text-lg drop-shadow-lg">Los Quinchos</p>
+                </div>
+                <div class="relative h-48 rounded-lg overflow-hidden shadow-md transform hover:scale-[1.03] transition duration-300 group">
+                    <img src="https://placehold.co/400x400/E9C46A/333D29?text=JARDINES" alt="Foto de Jardines" class="w-full h-full object-cover group-hover:opacity-70 transition duration-300">
+                    <p class="absolute bottom-3 left-3 text-atacama-dark font-bold text-lg drop-shadow-lg">Los Jardines</p>
+                </div>
+                <div class="relative h-48 rounded-lg overflow-hidden shadow-md transform hover:scale-[1.03] transition duration-300 group">
+                    <img src="https://placehold.co/400x400/333D29/D25C17?text=HAMACAS" alt="Foto de Hamacas" class="w-full h-full object-cover group-hover:opacity-70 transition duration-300">
+                    <p class="absolute bottom-3 left-3 text-white font-bold text-lg drop-shadow-lg">Las Hamacas</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- 7. PIE DE PÁGINA Y CONTACTO -->
+    <footer id="contacto" class="bg-atacama-dark text-atacama-light py-12 px-4 sm:px-6 lg:px-8 rounded-t-xl shadow-inner">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-10 border-b border-atacama-secondary/30 pb-8 mb-8">
+                
+                <!-- Info de Contacto -->
+                <div>
+                    <h4 class="text-xl font-bold text-atacama-secondary mb-4">Lodge Ancar Atacama</h4>
+                    <p class="flex items-center mb-2 text-sm">
+                        <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-atacama-primary"></i> Pasaje Lasana 654, San Pedro
+                    </p>
+                    <p class="flex items-center mb-2 text-sm">
+                        <i data-lucide="phone" class="w-4 h-4 mr-2 text-atacama-primary"></i> +56 9 6555 1271
+                    </p>
+                    <p class="flex items-center text-sm">
+                        <i data-lucide="mail" class="w-4 h-4 mr-2 text-atacama-primary"></i> info@ancaratacama.com
+                    </p>
+                </div>
+                
+                <!-- Navegación -->
+                <div>
+                    <h4 class="text-xl font-bold text-atacama-secondary mb-4">Enlaces Rápidos</h4>
+                    <a href="#bungalows" class="block mb-2 hover:text-atacama-primary transition duration-150">Bungalows</a>
+                    <a href="#galeria" class="block mb-2 hover:text-atacama-primary transition duration-150">Galería</a>
+                    <a href="#" class="block mb-2 hover:text-atacama-primary transition duration-150">Atracciones</a>
+                    <a href="#" class="block mb-2 hover:text-atacama-primary transition duration-150">Políticas</a>
+                </div>
+                
+                <!-- Suscripción -->
+                <div class="md:col-span-2">
+                    <h4 class="text-xl font-bold text-atacama-secondary mb-4">Suscríbete a Ofertas</h4>
+                    <p class="mb-4 text-sm">Obtén descuentos exclusivos en tu próxima reserva.</p>
+                    <form onsubmit="event.preventDefault(); alert('¡Gracias por suscribirte!');" class="flex">
+                        <input type="email" placeholder="Ingresa tu email" required class="p-3 w-full rounded-l-lg text-atacama-dark focus:ring-atacama-primary focus:border-atacama-primary border-none">
+                        <button type="submit" class="p-3 bg-atacama-primary text-white font-bold rounded-r-lg hover:bg-atacama-secondary hover:text-atacama-dark transition duration-300">
+                            Enviar
+                        </button>
+                    </form>
+                    <div class="mt-6 flex space-x-4">
+                        <a href="#" aria-label="Facebook" class="text-2xl hover:text-atacama-primary transition duration-150"><i data-lucide="facebook"></i></a>
+                        <a href="#" aria-label="Instagram" class="text-2xl hover:text-atacama-primary transition duration-150"><i data-lucide="instagram"></i></a>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="text-center text-sm text-gray-400">
+                <p>&copy; 2025 Lodge Ancar Atacama. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Botón Flotante de WhatsApp -->
+    <a href="https://wa.me/56965551271" class="whatsapp-float" target="_blank" aria-label="WhatsApp Chat">
+        <i data-lucide="message-circle" class="w-8 h-8"></i>
+    </a>
+
+    <!-- Script de Lucide Icons y JavaScript -->
+    <script>
+        // Inicializa Lucide Icons
+        lucide.createIcons();
+
+        // Lógica de Menú Móvil
+        const menuButton = document.getElementById('menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            const icon = menuButton.querySelector('i');
+            if (mobileMenu.classList.contains('hidden')) {
+                icon.setAttribute('data-lucide', 'menu');
+            } else {
+                icon.setAttribute('data-lucide', 'x');
+            }
+            lucide.createIcons(); // Recargar los iconos
+        });
+        
+        // Cierra el menú móvil al hacer clic en un enlace
+        document.querySelectorAll('#mobile-menu a').forEach(item => {
+            item.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+                menuButton.querySelector('i').setAttribute('data-lucide', 'menu');
+                lucide.createIcons();
+            });
+        });
+
+        // LÓGICA DEL CARRUSEL DE IMÁGENES
+        const carousel = document.getElementById('image-carousel');
+        const prevButton = document.getElementById('prev-slide');
+        const nextButton = document.getElementById('next-slide');
+        const totalSlides = 4;
+        let currentSlide = 0; // 0, 1, 2, 3
+        let slideInterval;
+
+        function updateCarousel() {
+            // Calcula el desplazamiento horizontal necesario (0%, -25%, -50%, -75%)
+            const offset = -currentSlide * (100 / totalSlides);
+            
+            // Aplica la transformación CSS para deslizar
+            carousel.style.transform = `translateX(${offset}%)`;
+        }
+
+        function nextSlide(manual = false) {
+            // Mueve al siguiente slide (o vuelve a 0 si es el último)
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateCarousel();
+            if (manual) resetAutoSlide();
+        }
+
+        function prevSlide() {
+            // Mueve al slide anterior (o vuelve al último si es el primero)
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateCarousel();
+            resetAutoSlide();
+        }
+
+        function startAutoSlide() {
+            // Inicia el carrusel para que cambie cada 3 segundos (3000ms)
+            slideInterval = setInterval(() => nextSlide(false), 3000);
+        }
+
+        function resetAutoSlide() {
+            // Resetea el temporizador para que no cambie inmediatamente después de la acción manual
+            clearInterval(slideInterval);
+            startAutoSlide();
+        }
+
+        // Event Listeners para los botones manuales
+        prevButton.addEventListener('click', prevSlide);
+        nextButton.addEventListener('click', () => nextSlide(true));
+        
+        // LÓGICA DE MODAL/CALENDARIO (RANGO DE FECHAS)
+        const datePickerModal = document.getElementById('date-picker-modal');
+        const openDatePickerBtn = document.getElementById('open-date-picker');
+        const checkInInput = document.getElementById('check-in-input');
+        const checkOutInput = document.getElementById('check-out-input');
+        const confirmDatesBtn = document.getElementById('confirm-dates-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const dateMessage = document.getElementById('date-selection-message');
+        
+        // Obtener la fecha de hoy en formato YYYY-MM-DD
+        function getTodayDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        
+        // Configurar la fecha mínima (Hoy)
+        const todayDate = getTodayDate();
+        checkInInput.min = todayDate;
+        
+        // Lógica de validación
+        function validateDates() {
+            const checkIn = checkInInput.value;
+            const checkOut = checkOutInput.value;
+            confirmDatesBtn.disabled = true;
+
+            // 1. Validar Check-in
+            if (!checkIn) {
+                checkOutInput.disabled = true;
+                checkOutInput.value = '';
+                dateMessage.textContent = 'Selecciona la fecha de entrada.';
+                return;
+            }
+            
+            checkOutInput.disabled = false;
+            checkOutInput.min = checkIn; // Check-out no puede ser antes del Check-in
+
+            // 2. Validar Check-out
+            if (!checkOut) {
+                dateMessage.textContent = 'Selecciona la fecha de salida.';
+                return;
+            }
+
+            // 3. Validar rango
+            if (new Date(checkOut) <= new Date(checkIn)) {
+                dateMessage.textContent = '⚠️ La fecha de salida debe ser posterior a la de entrada.';
+                dateMessage.classList.remove('text-gray-500');
+                dateMessage.classList.add('text-red-500');
+                return;
+            }
+
+            // Si todo es válido
+            const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
+            dateMessage.textContent = `✅ Reserva de ${nights} noche(s) seleccionada.`;
+            dateMessage.classList.remove('text-red-500');
+            dateMessage.classList.add('text-green-600');
+            confirmDatesBtn.disabled = false;
+        }
+
+        // Event listeners para los inputs
+        checkInInput.addEventListener('change', validateDates);
+        checkOutInput.addEventListener('change', validateDates);
+        
+        // Inicializar el mensaje y el estado del botón
+        validateDates();
+
+        // Función para abrir la modal
+        openDatePickerBtn.addEventListener('click', () => {
+            datePickerModal.style.display = 'flex';
+        });
+
+        // Función para cerrar la modal
+        closeModalBtn.addEventListener('click', () => {
+            datePickerModal.style.display = 'none';
+        });
+
+        // Clic en el botón "Ver Disponibilidad"
+        confirmDatesBtn.addEventListener('click', () => {
+            const checkIn = checkInInput.value;
+            const checkOut = checkOutInput.value;
+
+            // Simular la redirección al motor de reservas con las fechas
+            if (checkIn && checkOut && new Date(checkOut) > new Date(checkIn)) {
+                //alert(`Fechas confirmadas: Check-in ${checkIn} / Check-out ${checkOut}. Redirigiendo al motor de reservas...`);
+                datePickerModal.style.display = 'none';
+            }
+        });
+
+        // Cerrar modal al hacer clic fuera del contenido
+        datePickerModal.addEventListener('click', (e) => {
+            if (e.target === datePickerModal) {
+                datePickerModal.style.display = 'none';
+            }
+        });
+
+        // LÓGICA DE LA API GEMINI PARA GENERAR TOURS (Sin cambios)
+        const tourInterest = document.getElementById('tour-interest');
+        const generateTourBtn = document.getElementById('generate-tour-btn');
+        const tourResult = document.getElementById('tour-result');
+        const tourLoading = document.getElementById('tour-loading');
+        const apiKey = ""; // La API Key se inyectará automáticamente en Canvas.
+
+        // Utilidad de retardo para reintentos (Exponential Backoff)
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function fetchWithBackoff(url, options, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    }
+                    // Throw error to trigger retry logic for non-ok status codes (e.g., 429)
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error; // Re-throw if last attempt
+                    const waitTime = Math.pow(2, i) * 1000;
+                    await delay(waitTime);
+                }
+            }
+        }
+
+        async function generateTour() {
+            const userInterests = tourInterest.value.trim();
+            if (!userInterests) {
+                tourResult.innerHTML = '<p class="text-red-500 font-semibold">Por favor, ingresa tus intereses para que el guía pueda ayudarte.</p>';
+                return;
+            }
+
+            // UI Feedback
+            generateTourBtn.disabled = true;
+            tourLoading.classList.remove('hidden');
+            tourResult.innerHTML = '';
+            
+            const systemPrompt = "Actúa como un guía turístico experto en San Pedro de Atacama. Basado en los intereses del usuario, genera un itinerario de 3 días con los tours más relevantes, incluyendo breves descripciones y un consejo de experto para cada día. El output debe ser en español, en formato Markdown (usando **negritas**, listas y títulos), conciso y fácil de leer.";
+            const userQuery = `Mis intereses son: ${userInterests}. Genera el itinerario.`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            try {
+                const response = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const generatedText = candidate.content.parts[0].text;
+                    
+                    // Simple Markdown to HTML conversion for display
+                    let htmlText = generatedText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                        .replace(/^(#+)\s*(.*)$/gm, (match, hashes, content) => { // Headers
+                            const level = hashes.length;
+                            // Usamos text-2xl y text-xl para mantener la jerarquía de headers en el resultado
+                            return `<h${level} class="text-${4 - level}xl font-bold mt-4 mb-2">${content}</h${level}>`;
+                        })
+                        .replace(/^- (.*)$/gm, '<li class="ml-4 list-disc">$1</li>') // List items
+                        .replace(/Consejo de experto:/g, '<span class="text-atacama-primary font-semibold">Consejo de experto:</span>');
+
+                    // Envolver listas sin encabezado previo
+                    if (htmlText.includes('</li>') && !htmlText.includes('<h')) {
+                        htmlText = '<ul>' + htmlText + '</ul>';
+                    } else if (htmlText.includes('</li>')) {
+                        // Mejorar el manejo de listas rodeando el texto de la lista con <ul>/</ul>
+                        const lines = htmlText.split('\n');
+                        let newHtml = '';
+                        let inList = false;
+                        lines.forEach(line => {
+                            if (line.includes('<li')) {
+                                if (!inList) {
+                                    newHtml += '<ul>';
+                                    inList = true;
+                                }
+                                newHtml += line;
+                            } else {
+                                if (inList) {
+                                    newHtml += '</ul>';
+                                    inList = false;
+                                }
+                                newHtml += line;
+                            }
+                        });
+                        if (inList) newHtml += '</ul>';
+                        htmlText = newHtml;
+                    }
+                    
+                    // Limpieza final de espacios extra
+                    htmlText = htmlText.replace(/<\/ul><ul>/g, ''); 
+
+                    // Handle missing content (if any, though Gemini often provides text)
+                    if (generatedText.length < 50) {
+                        tourResult.innerHTML = '<p class="text-gray-500 italic">No se pudo generar un itinerario claro. Por favor, intenta con intereses más específicos.</p>';
+                    } else {
+                         tourResult.innerHTML = htmlText;
+                    }
+                    
+                } else {
+                    tourResult.innerHTML = '<p class="text-gray-500 italic">Ocurrió un error al procesar la respuesta del servidor. Inténtalo de nuevo.</p>';
+                }
+
+            } catch (error) {
+                console.error("Error al llamar a la API de Gemini:", error);
+                tourResult.innerHTML = '<p class="text-red-500 font-semibold">Error de conexión: No se pudo contactar al guía virtual. Intenta de nuevo más tarde.</p>';
+            } finally {
+                // UI Feedback Reset
+                generateTourBtn.disabled = false;
+                tourLoading.classList.add('hidden');
+            }
+        }
+        
+        // Asignar el listener al botón
+        document.getElementById('generate-tour-btn').addEventListener('click', generateTour);
+
+        // Inicia el carrusel y los iconos
+        window.onload = function() {
+            startAutoSlide();
+            lucide.createIcons(); // Asegurar que los iconos se carguen después de la carga inicial
+        }
+    </script>
+</body>
+</html>
